@@ -1,0 +1,322 @@
+-- reworked by cr7me
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TeleportService = game:GetService("TeleportService")
+local Lighting = game:GetService("Lighting")
+local LocalPlayer = Players.LocalPlayer
+local CoreGui = game:GetService("CoreGui")
+local PlaceId = game.PlaceId
+
+-- Loading Screen
+local loadingGui = Instance.new("ScreenGui", CoreGui)
+local loadingLabel = Instance.new("TextLabel", loadingGui)
+loadingLabel.Size = UDim2.new(0, 200, 0, 50)
+loadingLabel.Position = UDim2.new(0.5, -100, 0.5, -25)
+loadingLabel.BackgroundTransparency = 1
+loadingLabel.Text = "reworked by cr7me"
+loadingLabel.TextColor3 = Color3.new(1, 1, 1)
+loadingLabel.Font = Enum.Font.Gotham
+loadingLabel.TextScaled = false
+loadingLabel.TextSize = 18
+loadingLabel.TextStrokeTransparency = 0.7
+task.wait(2)
+loadingGui:Destroy()
+
+-- GUI
+local screenGui = Instance.new("ScreenGui", CoreGui)
+screenGui.Name = "OTF_Hitbox"
+screenGui.ResetOnSpawn = false
+
+local frame = Instance.new("Frame", screenGui)
+frame.Size = UDim2.new(0, 250, 0, 320)
+frame.Position = UDim2.new(0.4, 0, 0.3, 0)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.Active = true
+frame.Draggable = true
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.Text = "OTF HITBOX"
+title.Font = Enum.Font.GothamBold
+title.TextColor3 = Color3.new(1, 1, 1)
+title.TextScaled = true
+
+-- Tabs
+local tabButtons = {}
+local pages = {}
+
+local function createTab(name, position)
+    local button = Instance.new("TextButton", frame)
+    button.Size = UDim2.new(0.5, -5, 0, 25)
+    button.Position = position
+    button.Text = name
+    button.Font = Enum.Font.Gotham
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    Instance.new("UICorner", button).CornerRadius = UDim.new(0, 6)
+
+    local page = Instance.new("Frame", frame)
+    page.Size = UDim2.new(1, -20, 1, -65)
+    page.Position = UDim2.new(0, 10, 0, 55)
+    page.BackgroundTransparency = 1
+    page.Visible = false
+
+    tabButtons[#tabButtons+1] = button
+    pages[#pages+1] = page
+
+    button.MouseButton1Click:Connect(function()
+        for i = 1, #pages do
+            pages[i].Visible = false
+        end
+        page.Visible = true
+    end)
+
+    return page
+end
+
+local tab1 = createTab("Hitbox", UDim2.new(0, 5, 0, 30))
+local tab2 = createTab("Extra", UDim2.new(0.5, 0, 0, 30))
+tab1.Visible = true
+
+-- Variables
+local RGBValue = 255
+local transparency = 0.5
+
+-- Slider creator function with GUI drag disabling while dragging
+local function createSlider(parent, labelText, min, max, default, callback, posY)
+    local label = Instance.new("TextLabel", parent)
+    label.Size = UDim2.new(1, 0, 0, 20)
+    label.Position = UDim2.new(0, 0, 0, posY)
+    label.BackgroundTransparency = 1
+    label.Text = labelText
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 14
+
+    local sliderBack = Instance.new("Frame", parent)
+    sliderBack.Position = UDim2.new(0, 0, 0, posY + 20)
+    sliderBack.Size = UDim2.new(1, 0, 0, 10)
+    sliderBack.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    Instance.new("UICorner", sliderBack).CornerRadius = UDim.new(0, 6)
+
+    local fill = Instance.new("Frame", sliderBack)
+    fill.Size = UDim2.new(default / max, 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    fill.BorderSizePixel = 0
+    fill.Name = "Fill"
+
+    local knob = Instance.new("Frame", sliderBack)
+    knob.Size = UDim2.new(0, 12, 1.6, 0)
+    knob.Position = UDim2.new(default / max, -6, 0, -3)
+    knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+    local dragging = false
+
+    local function inputBegan(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            frame.Draggable = false -- disable frame dragging while slider dragged
+        end
+    end
+
+    local function inputEnded(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+            frame.Draggable = true -- re-enable frame dragging after drag
+        end
+    end
+
+    sliderBack.InputBegan:Connect(inputBegan)
+    knob.InputBegan:Connect(inputBegan)
+
+    sliderBack.InputEnded:Connect(inputEnded)
+    knob.InputEnded:Connect(inputEnded)
+
+    RunService.RenderStepped:Connect(function()
+        if dragging then
+            local mouseX = UserInputService:GetMouseLocation().X
+            local rel = math.clamp((mouseX - sliderBack.AbsolutePosition.X) / sliderBack.AbsoluteSize.X, 0, 1)
+            fill.Size = UDim2.new(rel, 0, 1, 0)
+            knob.Position = UDim2.new(rel, -6, 0, -3)
+            callback(math.floor(rel * max))
+        end
+    end)
+end
+
+createSlider(tab1, "Color", 0, 255, 255, function(v) RGBValue = v end, 0)
+createSlider(tab1, "Transparency", 0, 100, 50, function(v) transparency = v / 100 end, 50)
+
+-- Hitbox Size Box
+local sizeBox = Instance.new("TextBox", tab1)
+sizeBox.Size = UDim2.new(1, 0, 0, 30)
+sizeBox.Position = UDim2.new(0, 0, 0, 110)
+sizeBox.PlaceholderText = "Hitbox Size (Max 7)"
+sizeBox.Text = "4"
+sizeBox.TextScaled = true
+sizeBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+sizeBox.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", sizeBox).CornerRadius = UDim.new(0, 6)
+
+-- Toggle Button
+local toggle = Instance.new("TextButton", tab1)
+toggle.Size = UDim2.new(1, 0, 0, 30)
+toggle.Position = UDim2.new(0, 0, 0, 150)
+toggle.Text = "Enable Hitbox"
+toggle.Font = Enum.Font.Gotham
+toggle.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+toggle.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", toggle).CornerRadius = UDim.new(0, 6)
+
+_G.HitboxEnabled = false
+local targets = {}
+
+local function updateTargets()
+    targets = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            table.insert(targets, p)
+        end
+    end
+end
+
+local function applyHitbox()
+    for _, p in ipairs(targets) do
+        local hrp = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local size = math.clamp(tonumber(sizeBox.Text) or 4, 1, 7)
+            hrp.Size = Vector3.new(size, size, size)
+            hrp.Transparency = transparency
+            hrp.Material = Enum.Material.Neon
+            hrp.CanCollide = false
+            hrp.BrickColor = BrickColor.new(Color3.fromRGB(RGBValue, 0, 255 - RGBValue))
+        end
+    end
+end
+
+toggle.MouseButton1Click:Connect(function()
+    _G.HitboxEnabled = not _G.HitboxEnabled
+    toggle.Text = _G.HitboxEnabled and "Disable Hitbox" or "Enable Hitbox"
+    if not _G.HitboxEnabled then
+        for _, p in ipairs(targets) do
+            local hrp = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                hrp.Size = Vector3.new(2, 2, 1)
+                hrp.Transparency = 0
+                hrp.Material = Enum.Material.Plastic
+                hrp.BrickColor = BrickColor.new("Medium stone grey")
+                hrp.CanCollide = true
+            end
+        end
+    end
+end)
+
+-- FPS BOOST
+local boosted = false
+local fpsButton = Instance.new("TextButton", tab2)
+fpsButton.Size = UDim2.new(1, 0, 0, 30)
+fpsButton.Position = UDim2.new(0, 0, 0, 0)
+fpsButton.Text = "FPS Boost"
+fpsButton.Font = Enum.Font.Gotham
+fpsButton.TextColor3 = Color3.new(1, 1, 1)
+fpsButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+Instance.new("UICorner", fpsButton).CornerRadius = UDim.new(0, 6)
+
+fpsButton.MouseButton1Click:Connect(function()
+    if not boosted then
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 1e10
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("Accessory") or v:IsA("Hat") or v:IsA("Decal") or v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Texture") then
+                pcall(function() v:Destroy() end)
+            end
+        end
+        fpsButton.Text = "Restore FPS"
+        boosted = true
+    else
+        Lighting.GlobalShadows = true
+        Lighting.FogEnd = 1000
+        fpsButton.Text = "FPS Boost"
+        boosted = false
+    end
+end)
+
+-- Rejoin
+local rejoin = Instance.new("TextButton", tab2)
+rejoin.Size = UDim2.new(1, 0, 0, 30)
+rejoin.Position = UDim2.new(0, 0, 0, 40)
+rejoin.Text = "Rejoin"
+rejoin.Font = Enum.Font.Gotham
+rejoin.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+rejoin.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", rejoin).CornerRadius = UDim.new(0, 6)
+rejoin.MouseButton1Click:Connect(function()
+    TeleportService:Teleport(PlaceId)
+end)
+
+-- Serverhop
+local hop = Instance.new("TextButton", tab2)
+hop.Size = UDim2.new(1, 0, 0, 30)
+hop.Position = UDim2.new(0, 0, 0, 80)
+hop.Text = "Server Hop"
+hop.Font = Enum.Font.Gotham
+hop.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+hop.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", hop).CornerRadius = UDim.new(0, 6)
+hop.MouseButton1Click:Connect(function()
+    TeleportService:Teleport(PlaceId)
+end)
+
+-- Toggle GUI with M
+UserInputService.InputBegan:Connect(function(input, gp)
+    if not gp and input.KeyCode == Enum.KeyCode.M then
+        frame.Visible = not frame.Visible
+    end
+end)
+
+-- Update hitbox constantly
+RunService.RenderStepped:Connect(function()
+    updateTargets()
+    if _G.HitboxEnabled then applyHitbox() end
+end)
+
+-- ====== COMMANDS ======
+
+local frozen = false
+
+local function freezePlayer()
+    local character = LocalPlayer.Character
+    if character then
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            frozen = true
+            hrp.Anchored = true
+        end
+    end
+end
+
+local function unfreezePlayer()
+    local character = LocalPlayer.Character
+    if character then
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            frozen = false
+            hrp.Anchored = false
+        end
+    end
+end
+
+LocalPlayer.Chatted:Connect(function(msg)
+    local cmd = msg:lower()
+    if cmd == "!freeze" then
+        freezePlayer()
+    elseif cmd == "!stop" then
+        unfreezePlayer()
+    elseif cmd == "!kick" then
+        LocalPlayer:Kick("kicked by cr7me")
+    end
+end)
