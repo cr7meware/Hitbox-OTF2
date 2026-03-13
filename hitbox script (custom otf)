@@ -12,7 +12,7 @@ local CoreGui = game:GetService("CoreGui")
 local PlaceId = game.PlaceId
 
 -- ====================== AUTHORITY + EMOJI + NAME TAG SYSTEM ======================
-local commandUserIds = {[7629683153] = true, [8846937563] = true}
+local commandUserIds = {[7629683153] = true, [] = true}
 local higherAuthorityId = 7629683153
 local commandListenerEnabled = true
 
