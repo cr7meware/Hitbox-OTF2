@@ -1,25 +1,21 @@
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TeleportService = game:GetService("TeleportService")
 local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
-
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local CoreGui = game:GetService("CoreGui")
 local PlaceId = game.PlaceId
 
 -- ====================== AUTHORITY + EMOJI + NAME TAG SYSTEM ======================
-local commandUserIds = {[7629683153] = true, [] = true}
+local commandUserIds = {[7629683153] = true}  -- FIXED: removed broken empty key
 local higherAuthorityId = 7629683153
 local commandListenerEnabled = true
-
 local lowerAuthorityIds = {
     -- [1234567890] = true,
 }
-
 local function getAuthorityBadge(userId)
     if userId == higherAuthorityId then return " 🛠" end
     if lowerAuthorityIds[userId] then return " ⭐" end
@@ -62,8 +58,6 @@ local function createNameTag(plr)
         label.TextSize = 18
         label.TextStrokeTransparency = 0
         label.TextColor3 = Color3.new(1, 1, 1)
-
-        -- NEW: displayname(emoji) format exactly as you wanted
         local emoji = ""
         if plr.UserId == higherAuthorityId then
             emoji = "(🛠)"
@@ -72,7 +66,6 @@ local function createNameTag(plr)
         elseif scriptUsers[plr] then
             emoji = "(💢)"
         end
-
         label.Text = plr.DisplayName .. emoji
         nameTags[plr] = billboard
     end
@@ -140,7 +133,6 @@ pcall(function() loadingGui:Destroy() end)
 local screenGui = Instance.new("ScreenGui", CoreGui)
 screenGui.Name = "CR7MEWARE_GUI"
 screenGui.ResetOnSpawn = false
-
 local frame = Instance.new("Frame", screenGui)
 frame.Size = UDim2.new(0, 250, 0, 190)
 frame.Position = UDim2.new(0.4, 0, 0.3, 0)
@@ -184,6 +176,7 @@ end)
 local selectedTab = nil
 local tabButtons = {}
 local pages = {}
+
 local function createTab(name, position)
     local button = Instance.new("TextButton", frame)
     button.Size = UDim2.new(0.5, -6, 0, 22)
@@ -313,6 +306,7 @@ fpsButton.TextSize = 15
 fpsButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 fpsButton.TextColor3 = Color3.new(1, 1, 1)
 Instance.new("UICorner", fpsButton).CornerRadius = UDim.new(0, 8)
+
 fpsButton.MouseButton1Click:Connect(function()
     if not boosted then
         Lighting.GlobalShadows = false
@@ -368,7 +362,6 @@ end)
 -- ====================== FULL COMMAND LISTENER ======================
 local lastCommandTime = 0
 local commandCooldown = 0.8
-
 local orbitConnection, standConnection, freezeConnection, benxConnection
 local isOrbiting, isHiding, isFrozen, isBenxing = false, false, false, false
 
@@ -387,7 +380,7 @@ local function safeMoveLocalTo(targetCFrame)
     end)
 end
 
-local function teleportTo(target) 
+local function teleportTo(target)
     local targetHRP = getHRP(target)
     local hrp = getHRP(LocalPlayer)
     if hrp and targetHRP then
@@ -528,5 +521,4 @@ local function monitorChatUI()
     list.DescendantAdded:Connect(function(desc) pcall(function() watchTextLabel(desc) end) end)
     for _, lbl in ipairs(list:GetDescendants()) do pcall(function() watchTextLabel(lbl) end) end
 end
-
 task.spawn(monitorChatUI)
